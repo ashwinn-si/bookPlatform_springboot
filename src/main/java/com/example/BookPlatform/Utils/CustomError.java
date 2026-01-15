@@ -1,4 +1,4 @@
-package Utils;
+package com.example.BookPlatform.Utils;
 
 
 import org.springframework.http.HttpStatus;

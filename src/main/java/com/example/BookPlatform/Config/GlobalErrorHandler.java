@@ -1,7 +1,7 @@
-package Config;
+package com.example.BookPlatform.Config;
 
-import Utils.CustomError;
-import Utils.ResponseHandler;
+import com.example.BookPlatform.Utils.CustomError;
+import com.example.BookPlatform.Utils.ResponseHandler;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
