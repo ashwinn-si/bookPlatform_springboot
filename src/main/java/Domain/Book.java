@@ -2,6 +2,7 @@ package Domain;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -22,19 +23,27 @@ public class Book {
   @GeneratedValue(strategy = GenerationType.AUTO)
   private Integer id;
 
-  @NotBlank(message = "Book name is required")
-  @Size(min = 1, max = 200, message = "Book name must be between 1 and 200 characters")
-  @Column(nullable = false, length = 200)
-  private String bookName;
+  @NotNull(message = "book name is required")
+  private String name;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "author_id", nullable = false)
+  @NotBlank
+  @ManyToOne(fetch = FetchType.EAGER)
+  @JoinColumn(name = "author_id")
   private Author author;
 
-  @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE }, fetch = FetchType.LAZY)
-  @JoinTable(name = "book_category", joinColumns = @JoinColumn(name = "book_id"), inverseJoinColumns = @JoinColumn(name = "category_id"))
-  private List<Category> categories = new ArrayList<>();
+  @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(
+          name ="book_category",
+          joinColumns = @JoinColumn(name = "book_id"),
+          inverseJoinColumns = @JoinColumn(name="category_id")
+  )
+  private List<Category> categoryList = new ArrayList<>();
 
-  @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-  private List<Review> reviews = new ArrayList<>();
+  @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(
+          name="book_reviews",
+          joinColumns = @JoinColumn(name = "book_id"),
+          inverseJoinColumns = @JoinColumn(name = "review_id")
+  )
+  private List<Review> reviewList = new ArrayList<>();
 }
