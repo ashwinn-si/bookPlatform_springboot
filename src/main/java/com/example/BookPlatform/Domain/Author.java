@@ -26,4 +26,8 @@ public class Author {
 
   @OneToMany(mappedBy = "author", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
   private List<Book> bookList = new ArrayList<>();
+
+  public Author(String name){
+      this.name = name;
+  }
 }
