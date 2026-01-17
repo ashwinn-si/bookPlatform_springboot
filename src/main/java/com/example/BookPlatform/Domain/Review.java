@@ -13,7 +13,6 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
-
 @Table(name = "reviews")
 @Entity
 @Getter
@@ -29,10 +28,16 @@ public class Review {
   @Size(min = 0)
   private String message;
 
-  @Min(value =  0)
+  @Min(value = 0)
   @Max(value = 5)
   private Integer stars;
 
-  @ManyToMany(mappedBy = "reviewList", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
-  private List<Book> bookList = new ArrayList<>();
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "book_id")
+  private Book book;
+
+  public Review(String message, Integer stars) {
+    this.message = message;
+    this.stars = stars;
+  }
 }

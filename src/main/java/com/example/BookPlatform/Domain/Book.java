@@ -31,22 +31,13 @@ public class Book {
   private Author author;
 
   @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(
-          name ="book_category",
-          joinColumns = @JoinColumn(name = "book_id"),
-          inverseJoinColumns = @JoinColumn(name="category_id")
-  )
+  @JoinTable(name = "book_category", joinColumns = @JoinColumn(name = "book_id"), inverseJoinColumns = @JoinColumn(name = "category_id"))
   private List<Category> categoryList = new ArrayList<>();
 
-  @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(
-          name="book_reviews",
-          joinColumns = @JoinColumn(name = "book_id"),
-          inverseJoinColumns = @JoinColumn(name = "review_id")
-  )
+  @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   private List<Review> reviewList = new ArrayList<>();
 
-  public Book(String name){
-      this.name = name;
+  public Book(String name) {
+    this.name = name;
   }
 }
