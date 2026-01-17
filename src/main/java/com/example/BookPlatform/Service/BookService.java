@@ -1,0 +1,106 @@
+package com.example.BookPlatform.Service;
+
+import com.example.BookPlatform.DTO.GetAllDTO;
+import com.example.BookPlatform.Domain.Author;
+import com.example.BookPlatform.Domain.Book;
+import com.example.BookPlatform.Repository.AuthorRepository;
+import com.example.BookPlatform.Repository.BookRepository;
+import com.example.BookPlatform.Utils.CustomError;
+import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+class BookDTO {
+    @Data
+    @AllArgsConstructor
+    static class Author{
+        private String name;
+        private Integer authorId;
+    }
+    private String name;
+    private Integer bookId;
+    private Author author;
+}
+
+@Service
+public class BookService {
+  private final BookRepository bookRepository;
+  private final AuthorRepository authorRepository;
+
+  BookService(BookRepository bookRepository, AuthorRepository authorRepository) {
+    this.bookRepository = bookRepository;
+    this.authorRepository = authorRepository;
+  }
+
+  public GetAllDTO<BookDTO> getAllBook(Integer page, Integer size, String name) {
+    PageRequest pageRequest = PageRequest.of(page - 1, size);
+    Page<Book> bookList;
+    if (name == null) {
+      bookList = bookRepository.findAll(pageRequest);
+    } else {
+      bookList = bookRepository.findByNameContaining(pageRequest, name);
+    }
+    List<BookDTO> returnDTO = new ArrayList<>();
+    for (Book book : bookList.getContent()) {
+        Author author = book.getAuthor();
+        returnDTO.add(new BookDTO(book.getName(), book.getId(), new BookDTO.Author(author.getName(), author.getId())));
+    }
+    return new GetAllDTO<BookDTO>(bookList.getTotalPages(), page, size, returnDTO);
+  }
+
+  public BookDTO getBook(Integer bookId) {
+    Book book = isBookExsits(bookId);
+    Author author = book.getAuthor();
+    return new BookDTO(book.getName(), book.getId(), new BookDTO.Author(author.getName(), author.getId()));
+  }
+
+  @Transactional
+  public void addBook(String name, Integer authorId) {
+    Author author = isAuthorExists(authorId);
+    Book book = new Book(name);
+    book.setAuthor(author);
+    bookRepository.save(book);
+  }
+
+  @Transactional
+  public void deleteBook(Integer bookId) {
+    isBookExsits(bookId);
+    bookRepository.deleteById(bookId);
+  }
+
+  @Transactional
+  public void updateBook(Integer bookId, Integer authorId, String name) {
+    if (authorId == null && name == null) {
+      throw new CustomError(HttpStatus.CONFLICT, "new author or new book name is required for update");
+    }
+    Book book = isBookExsits(bookId);
+    if (authorId != null) {
+      Author author = isAuthorExists(authorId);
+      book.setAuthor(author);
+    }
+    if (name != null) {
+      book.setName(name);
+    }
+    bookRepository.save(book);
+  }
+
+  private Book isBookExsits(Integer bookId) {
+    return bookRepository.findById(bookId).orElseThrow(() -> new CustomError(HttpStatus.NOT_FOUND, "book not found"));
+  }
+
+  private Author isAuthorExists(Integer authorId) {
+    return authorRepository.findById(authorId)
+        .orElseThrow(() -> new CustomError(HttpStatus.NOT_FOUND, "author not found"));
+  }
+}

@@ -25,7 +25,7 @@ public class Book {
   @NotNull(message = "book name is required")
   private String name;
 
-  @NotBlank
+  @NotNull(message = "author id is required")
   @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "author_id")
   private Author author;
@@ -45,4 +45,8 @@ public class Book {
           inverseJoinColumns = @JoinColumn(name = "review_id")
   )
   private List<Review> reviewList = new ArrayList<>();
+
+  public Book(String name){
+      this.name = name;
+  }
 }

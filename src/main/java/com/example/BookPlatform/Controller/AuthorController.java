@@ -12,7 +12,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,7 +39,7 @@ public class AuthorController {
   ResponseEntity<?> getAllAuthor(@RequestParam @Min(value = 1, message = "page is required") Integer page,
       @RequestParam @Min(value = 1, message = "size is required") Integer size,
       @RequestParam @Nullable String name) {
-    return ResponseHandler.handleResponse(HttpStatus.OK, authorService.getAllAuthor(page - 1, size, name),
+    return ResponseHandler.handleResponse(HttpStatus.OK, authorService.getAllAuthor(page, size, name),
         "all authors details");
   }
 
