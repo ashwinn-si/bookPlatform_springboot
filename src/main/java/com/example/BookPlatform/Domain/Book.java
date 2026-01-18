@@ -37,7 +37,8 @@ public class Book {
   @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   private List<Review> reviewList = new ArrayList<>();
 
-  public Book(String name) {
+  public Book(String name, List<Category> categoryList) {
     this.name = name;
+    this.categoryList = categoryList;
   }
 }

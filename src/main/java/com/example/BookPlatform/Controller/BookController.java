@@ -15,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -23,6 +25,8 @@ class AddBookDTO{
     String name;
     @NotNull(message = "author id is required")
     Integer authorId;
+    @NotNull(message = "categories is required")
+    List<Integer> categories;
 }
 
 @Data
@@ -33,6 +37,8 @@ class UpdateBookDTO{
     String name;
     @Nullable
     Integer authorId;
+    @Nullable
+    List<Integer> categories;
 }
 
 @RestController
@@ -59,14 +65,14 @@ public class BookController {
 
     @PostMapping("/add-book")
     ResponseEntity<?> addBook(@RequestBody @Valid AddBookDTO addBookDTO){
-        bookService.addBook(addBookDTO.getName(), addBookDTO.getAuthorId());
+        bookService.addBook(addBookDTO.getName(), addBookDTO.getAuthorId(), addBookDTO.getCategories());
         return ResponseHandler.handleResponse(HttpStatus.CREATED, null, "book added");
     }
 
     @PutMapping("/update-book/{bookId}")
     ResponseEntity<?> updateBook(@PathVariable @NotNull(message = "bookId is required") @Min(0) Integer bookId,
                                  @RequestBody @Valid UpdateBookDTO updateBookDTO){
-        bookService.updateBook(bookId, updateBookDTO.getAuthorId(), updateBookDTO.getName());
+        bookService.updateBook(bookId, updateBookDTO.getAuthorId(), updateBookDTO.getName(), updateBookDTO.getCategories());
         return ResponseHandler.handleResponse(HttpStatus.OK, null, "updated book added");
     }
 

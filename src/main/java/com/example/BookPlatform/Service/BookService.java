@@ -3,8 +3,10 @@ package com.example.BookPlatform.Service;
 import com.example.BookPlatform.DTO.GetAllDTO;
 import com.example.BookPlatform.Domain.Author;
 import com.example.BookPlatform.Domain.Book;
+import com.example.BookPlatform.Domain.Category;
 import com.example.BookPlatform.Repository.AuthorRepository;
 import com.example.BookPlatform.Repository.BookRepository;
+import com.example.BookPlatform.Repository.CategoryRepository;
 import com.example.BookPlatform.Utils.CustomError;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -37,10 +39,12 @@ class BookDTO {
 public class BookService {
   private final BookRepository bookRepository;
   private final AuthorRepository authorRepository;
+  private final CategoryRepository categoryRepository;
 
-  BookService(BookRepository bookRepository, AuthorRepository authorRepository) {
+  BookService(BookRepository bookRepository, AuthorRepository authorRepository, CategoryRepository categoryRepository) {
     this.bookRepository = bookRepository;
     this.authorRepository = authorRepository;
+    this.categoryRepository = categoryRepository;
   }
 
   public GetAllDTO<BookDTO> getAllBook(Integer page, Integer size, String name) {
@@ -66,9 +70,13 @@ public class BookService {
   }
 
   @Transactional
-  public void addBook(String name, Integer authorId) {
+  public void addBook(String name, Integer authorId, List<Integer> category) {
     Author author = isAuthorExists(authorId);
-    Book book = new Book(name);
+    List<Category> categoryList = categoryRepository.findAllById(category);
+    if (categoryList.size() != category.size()) {
+        throw new CustomError(HttpStatus.NOT_FOUND, "one or more categories not found");
+    }
+    Book book = new Book(name, categoryList);
     book.setAuthor(author);
     bookRepository.save(book);
   }
@@ -80,7 +88,7 @@ public class BookService {
   }
 
   @Transactional
-  public void updateBook(Integer bookId, Integer authorId, String name) {
+  public void updateBook(Integer bookId, Integer authorId, String name, List<Integer> categories) {
     if (authorId == null && name == null) {
       throw new CustomError(HttpStatus.CONFLICT, "new author or new book name is required for update");
     }
@@ -91,6 +99,13 @@ public class BookService {
     }
     if (name != null) {
       book.setName(name);
+    }
+    if(categories != null){
+        List<Category> categoryList = categoryRepository.findAllById(categories);
+        if (categoryList.size() != categories.size()) {
+            throw new CustomError(HttpStatus.NOT_FOUND, "one or more categories not found");
+        }
+        book.setCategoryList(categoryList);
     }
     bookRepository.save(book);
   }
