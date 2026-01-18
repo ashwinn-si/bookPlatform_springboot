@@ -24,8 +24,7 @@ public class Review {
   @GeneratedValue(strategy = GenerationType.AUTO)
   private Integer id;
 
-  @NotNull
-  @Size(min = 0)
+  @NotNull(message = "message cant be empty")
   private String message;
 
   @Min(value = 0)
