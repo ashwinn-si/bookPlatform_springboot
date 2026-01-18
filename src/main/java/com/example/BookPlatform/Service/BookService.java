@@ -18,21 +18,24 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 class BookDTO {
-    @Data
-    @AllArgsConstructor
-    static class Author{
-        private String name;
-        private Integer authorId;
-    }
+  @Data
+  @AllArgsConstructor
+  static class Author {
     private String name;
-    private Integer bookId;
-    private Author author;
+    private Integer authorId;
+  }
+
+  private String name;
+  private Integer bookId;
+  private Author author;
+  private Double stars;
 }
 
 @Service
@@ -57,8 +60,9 @@ public class BookService {
     }
     List<BookDTO> returnDTO = new ArrayList<>();
     for (Book book : bookList.getContent()) {
-        Author author = book.getAuthor();
-        returnDTO.add(new BookDTO(book.getName(), book.getId(), new BookDTO.Author(author.getName(), author.getId())));
+      Author author = book.getAuthor();
+        Double avgStars = bookRepository.getAverageStars(book.getId());
+        returnDTO.add(new BookDTO(book.getName(), book.getId(), new BookDTO.Author(author.getName(), author.getId()), avgStars));
     }
     return new GetAllDTO<BookDTO>(bookList.getTotalPages(), page, size, returnDTO);
   }
@@ -66,15 +70,17 @@ public class BookService {
   public BookDTO getBook(Integer bookId) {
     Book book = isBookExsits(bookId);
     Author author = book.getAuthor();
-    return new BookDTO(book.getName(), book.getId(), new BookDTO.Author(author.getName(), author.getId()));
+    Double avgStars = bookRepository.getAverageStars(book.getId());
+    return new BookDTO(book.getName(), book.getId(), new BookDTO.Author(author.getName(), author.getId()),
+        avgStars);
   }
 
   @Transactional
   public void addBook(String name, Integer authorId, List<Integer> category) {
     Author author = isAuthorExists(authorId);
-    List<Category> categoryList = categoryRepository.findAllById(category);
+    List<Category> categoryList = getCategory(category);
     if (categoryList.size() != category.size()) {
-        throw new CustomError(HttpStatus.NOT_FOUND, "one or more categories not found");
+      throw new CustomError(HttpStatus.NOT_FOUND, "one or more categories not found");
     }
     Book book = new Book(name, categoryList);
     book.setAuthor(author);
@@ -100,12 +106,12 @@ public class BookService {
     if (name != null) {
       book.setName(name);
     }
-    if(categories != null){
-        List<Category> categoryList = categoryRepository.findAllById(categories);
-        if (categoryList.size() != categories.size()) {
-            throw new CustomError(HttpStatus.NOT_FOUND, "one or more categories not found");
-        }
-        book.setCategoryList(categoryList);
+    if (categories != null) {
+      List<Category> categoryList = getCategory(categories);
+      if (categoryList.size() != categories.size()) {
+        throw new CustomError(HttpStatus.NOT_FOUND, "one or more categories not found");
+      }
+      book.setCategoryList(categoryList);
     }
     bookRepository.save(book);
   }
@@ -117,5 +123,19 @@ public class BookService {
   private Author isAuthorExists(Integer authorId) {
     return authorRepository.findById(authorId)
         .orElseThrow(() -> new CustomError(HttpStatus.NOT_FOUND, "author not found"));
+  }
+
+  private List<Category> getCategory(List<Integer> categories) {
+    List<Category> categoryList = new ArrayList<>();
+    for (Integer id : categories) {
+      Category category = isCategoryExists(id);
+      categoryList.add(category);
+    }
+    return categoryList;
+  }
+
+  private Category isCategoryExists(Integer categoryId) {
+    return categoryRepository.findById(categoryId).orElseThrow(
+        () -> new CustomError(HttpStatus.NOT_FOUND, "category missing"));
   }
 }
