@@ -22,8 +22,12 @@ public class Category {
   private Integer id;
 
   @NotNull(message = "category name is required")
-  private String category;
+  private String name;
 
   @ManyToMany(mappedBy = "categoryList", fetch = FetchType.LAZY)
   List<Book> bookList = new ArrayList<>();
+
+  public Category(String name){
+      this.name = name;
+  }
 }
