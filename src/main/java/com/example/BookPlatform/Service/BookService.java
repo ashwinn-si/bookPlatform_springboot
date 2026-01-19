@@ -4,6 +4,7 @@ import com.example.BookPlatform.DTO.GetAllDTO;
 import com.example.BookPlatform.Domain.Author;
 import com.example.BookPlatform.Domain.Book;
 import com.example.BookPlatform.Domain.Category;
+import com.example.BookPlatform.Domain.Review;
 import com.example.BookPlatform.Repository.AuthorRepository;
 import com.example.BookPlatform.Repository.BookRepository;
 import com.example.BookPlatform.Repository.CategoryRepository;
@@ -27,15 +28,24 @@ import java.util.List;
 class BookDTO {
   @Data
   @AllArgsConstructor
+  @NoArgsConstructor
   static class Author {
     private String name;
     private Integer authorId;
   }
 
+  @Data
+  @AllArgsConstructor
+  @NoArgsConstructor
+  static class Category{
+      private String name;
+      private Integer categoryId;
+  }
   private String name;
   private Integer bookId;
   private Author author;
   private Double stars;
+  private List<Category> categoryList;
 }
 
 @Service
@@ -62,7 +72,7 @@ public class BookService {
     for (Book book : bookList.getContent()) {
       Author author = book.getAuthor();
         Double avgStars = bookRepository.getAverageStars(book.getId());
-        returnDTO.add(new BookDTO(book.getName(), book.getId(), new BookDTO.Author(author.getName(), author.getId()), avgStars));
+        returnDTO.add(new BookDTO(book.getName(), book.getId(), new BookDTO.Author(author.getName(), author.getId()), avgStars, null));
     }
     return new GetAllDTO<BookDTO>(bookList.getTotalPages(), page, size, returnDTO);
   }
@@ -71,8 +81,12 @@ public class BookService {
     Book book = isBookExsits(bookId);
     Author author = book.getAuthor();
     Double avgStars = bookRepository.getAverageStars(book.getId());
+    List<BookDTO.Category> categoryList = new ArrayList<>();
+    for(Category category: book.getCategoryList()){
+        categoryList.add(new BookDTO.Category(category.getName(), category.getId()));
+    }
     return new BookDTO(book.getName(), book.getId(), new BookDTO.Author(author.getName(), author.getId()),
-        avgStars);
+        avgStars, categoryList);
   }
 
   @Transactional

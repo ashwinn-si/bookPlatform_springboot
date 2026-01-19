@@ -42,6 +42,9 @@ class GetAuthorDTO {
     }
     private String name;
     private List<Book> bookNames;
+    private Integer totalPages;
+    private Integer currPage;
+    private Integer size;
     private Integer authorId;
     private Double avgStars;
 }
@@ -78,19 +81,24 @@ public class AuthorService {
     return new GetAllDTO<GetAllAuthorDTO>(authorPage.getTotalPages(), page, authorPage.getSize(), allAuthorDTOS);
   }
 
-  public GetAuthorDTO getAuthor(Integer authorId) {
+  public GetAuthorDTO getAuthor(Integer authorId, Integer page, Integer size) {
     Author author = checkIfAuthorExisits(authorId);
+    PageRequest pageRequest = PageRequest.of(page - 1, size);
     Double avgStars = authorRepository.getStars(author.getId());
     GetAuthorDTO getAuthorDTO = new GetAuthorDTO();
     getAuthorDTO.setName(author.getName());
     List<GetAuthorDTO.Book> books = new ArrayList<>();
-    for (Book book : author.getBookList()) {
+    Page<Book> bookList = bookRepository.findByAuthor(author, pageRequest);
+    for (Book book : bookList) {
         Double avgStarBook = bookRepository.getAverageStars(book.getId());
-      books.add(new GetAuthorDTO.Book(book.getName(), book.getId(), avgStars));
+        books.add(new GetAuthorDTO.Book(book.getName(), book.getId(), avgStars));
     }
     getAuthorDTO.setBookNames(books);
     getAuthorDTO.setAuthorId(authorId);
     getAuthorDTO.setAvgStars(avgStars);
+    getAuthorDTO.setSize(bookList.getSize());
+    getAuthorDTO.setCurrPage(page);
+    getAuthorDTO.setTotalPages(bookList.getTotalPages());
     return getAuthorDTO;
   }
 

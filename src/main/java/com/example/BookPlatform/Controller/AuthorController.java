@@ -36,16 +36,19 @@ public class AuthorController {
   }
 
   @GetMapping("/get-all-author")
-  ResponseEntity<?> getAllAuthor(@RequestParam @Min(value = 1, message = "page is required") Integer page,
-      @RequestParam @Min(value = 1, message = "size is required") Integer size,
-      @RequestParam @Nullable String name) {
+  ResponseEntity<?> getAllAuthor(
+          @RequestParam @Min(value = 1, message = "page is required") Integer page,
+          @RequestParam @Min(value = 1, message = "size is required") Integer size,
+          @RequestParam @Nullable String name) {
     return ResponseHandler.handleResponse(HttpStatus.OK, authorService.getAllAuthor(page, size, name),
         "all authors details");
   }
 
   @GetMapping("/get-author/{authorId}")
-  ResponseEntity<?> getAuthor(@PathVariable @Min(value = 0, message = "id is required") Integer authorId) {
-    return ResponseHandler.handleResponse(HttpStatus.OK, authorService.getAuthor(authorId), "author details");
+  ResponseEntity<?> getAuthor(@PathVariable @Min(value = 0, message = "id is required") Integer authorId,
+                              @RequestParam @Min(value = 1, message = "page is required") Integer page,
+                              @RequestParam @Min(value = 1, message = "size is required") Integer size) {
+    return ResponseHandler.handleResponse(HttpStatus.OK, authorService.getAuthor(authorId, page, size), "author details");
   }
 
   @PostMapping("/add-author")
