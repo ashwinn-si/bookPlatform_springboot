@@ -4,6 +4,7 @@ import com.example.BookPlatform.DTO.GetAllDTO;
 import com.example.BookPlatform.Domain.Author;
 import com.example.BookPlatform.Domain.Book;
 import com.example.BookPlatform.Repository.AuthorRepository;
+import com.example.BookPlatform.Repository.BookRepository;
 import com.example.BookPlatform.Utils.CustomError;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -24,6 +25,7 @@ class GetAllAuthorDTO {
   private String name;
   private Integer bookCount;
   private Integer authorId;
+  private Double avgStars;
 }
 
 @Data
@@ -36,19 +38,22 @@ class GetAuthorDTO {
     static class Book{
         String bookName;
         Integer bookId;
+        Double avgStars;
     }
     private String name;
     private List<Book> bookNames;
     private Integer authorId;
+    private Double avgStars;
 }
 
 @Service
 public class AuthorService {
 
   private final AuthorRepository authorRepository;
-
-  AuthorService(AuthorRepository authorRepository) {
-    this.authorRepository = authorRepository;
+  private final BookRepository bookRepository;
+  AuthorService(AuthorRepository authorRepository, BookRepository bookRepository) {
+        this.bookRepository = bookRepository;
+      this.authorRepository = authorRepository;
   }
 
   @Transactional
@@ -67,21 +72,25 @@ public class AuthorService {
       authorPage = authorRepository.findAll(pageRequest);
     }
     for (Author author : authorPage.getContent()) {
-      allAuthorDTOS.add(new GetAllAuthorDTO(author.getName(), author.getBookList().size(), author.getId()));
+        Double avgStars = authorRepository.getStars(author.getId());
+        allAuthorDTOS.add(new GetAllAuthorDTO(author.getName(), author.getBookList().size(), author.getId(), avgStars));
     }
     return new GetAllDTO<GetAllAuthorDTO>(authorPage.getTotalPages(), page, authorPage.getSize(), allAuthorDTOS);
   }
 
   public GetAuthorDTO getAuthor(Integer authorId) {
     Author author = checkIfAuthorExisits(authorId);
+    Double avgStars = authorRepository.getStars(author.getId());
     GetAuthorDTO getAuthorDTO = new GetAuthorDTO();
     getAuthorDTO.setName(author.getName());
     List<GetAuthorDTO.Book> books = new ArrayList<>();
     for (Book book : author.getBookList()) {
-      books.add(new GetAuthorDTO.Book(book.getName(), book.getId()));
+        Double avgStarBook = bookRepository.getAverageStars(book.getId());
+      books.add(new GetAuthorDTO.Book(book.getName(), book.getId(), avgStars));
     }
     getAuthorDTO.setBookNames(books);
     getAuthorDTO.setAuthorId(authorId);
+    getAuthorDTO.setAvgStars(avgStars);
     return getAuthorDTO;
   }
 
