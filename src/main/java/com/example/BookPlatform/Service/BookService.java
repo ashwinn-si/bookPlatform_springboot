@@ -70,9 +70,7 @@ public class BookService {
     }
     List<BookDTO> returnDTO = new ArrayList<>();
     for (Book book : bookList.getContent()) {
-      Author author = book.getAuthor();
-        Double avgStars = bookRepository.getAverageStars(book.getId());
-        returnDTO.add(new BookDTO(book.getName(), book.getId(), new BookDTO.Author(author.getName(), author.getId()), avgStars, null));
+        returnDTO.add(getBook(book.getId()));
     }
     return new GetAllDTO<BookDTO>(bookList.getTotalPages(), page, size, returnDTO);
   }

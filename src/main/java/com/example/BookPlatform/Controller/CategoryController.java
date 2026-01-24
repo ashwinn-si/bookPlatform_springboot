@@ -70,4 +70,9 @@ public class CategoryController {
     categoryService.deleteCategory(categoryId);
     return ResponseHandler.handleResponse(HttpStatus.OK, null, "category and the related books deleted");
   }
+
+  @GetMapping("/add-book/get-category")
+  public ResponseEntity<?> addBookGetCategory() {
+      return ResponseHandler.handleResponse(HttpStatus.OK, categoryService.addBookGetCategory(), "category and the related books deleted");
+  }
 }

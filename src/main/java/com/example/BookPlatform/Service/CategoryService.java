@@ -43,6 +43,14 @@ class GetCategoryDTO {
   private List<Book> bookList;
 }
 
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+class AddBookGetCategoryDTO{
+    private Integer id;
+    private String name;
+}
+
 @Service
 public class CategoryService {
   private final CategoryRepository categoryRepository;
@@ -91,6 +99,15 @@ public class CategoryService {
     }
     return new GetAllDTO(content.getTotalPages(), page, size, categories);
   }
+
+    public List<AddBookGetCategoryDTO> addBookGetCategory() {
+      List<Category> categoryList = categoryRepository.findAll();
+      List<AddBookGetCategoryDTO> categories = new ArrayList<>();
+      for (Category category : categoryList) {
+          categories.add(new AddBookGetCategoryDTO(category.getId(), category.getName()));
+      }
+      return categories;
+    }
 
   public GetCategoryDTO getCategory(Integer categoryId) {
     Category category = isCategoryExists(categoryId);
