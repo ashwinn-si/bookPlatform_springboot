@@ -15,8 +15,10 @@ A RESTful API backend service for managing books, authors, categories, and revie
 ## 🎯 Project Overview
 
 BookPlatform is a comprehensive book management system that allows users to:
-- Manage authors and their portfolios
-- Organize books into multiple categories
+- **User Authentication**: Secure signup/login with JWT tokens
+- **Role-Based Access**: Admin and User roles with protected endpoints
+- Manage authors and their portfolios (Admin only)
+- Organize books into multiple categories (Admin only)
 - Track book reviews and ratings
 - Retrieve paginated lists with search functionality
 - Get average star ratings for books
@@ -26,6 +28,9 @@ BookPlatform is a comprehensive book management system that allows users to:
 - **Java 21** - Latest LTS version
 - **Spring Boot 4.0.1** - Application framework
 - **Spring Data JPA** - ORM and data access
+- **Spring Security** - Authentication & authorization
+- **JWT (JSON Web Tokens)** - Stateless authentication
+- **BCrypt** - Password hashing
 - **MySQL** - Relational database
 - **Lombok** - Reduce boilerplate code
 - **Jakarta Validation** - Request validation
@@ -38,9 +43,13 @@ src/main/java/com/example/BookPlatform/
 ├── BookPlatformApplication.java        # Main application entry point
 │
 ├── Config/
-│   └── GlobalErrorHandler.java        # Centralized exception handling
+│   ├── GlobalErrorHandler.java        # Centralized exception handling
+│   ├── SecurityConfig.java            # Spring Security & CORS configuration
+│   ├── JwtHandler.java                # JWT token validation filter
+│   └── IsAdminHandler.java            # Admin authorization filter
 │
 ├── Controller/                         # REST API endpoints
+│   ├── AuthController.java
 │   ├── AuthorController.java
 │   ├── BookController.java
 │   ├── CategoryController.java
@@ -50,25 +59,31 @@ src/main/java/com/example/BookPlatform/
 │   ├── Author.java
 │   ├── Book.java
 │   ├── Category.java
-│   └── Review.java
+│   ├── Review.java
+│   └── User.java
 │
 ├── DTO/                                # Data Transfer Objects
-│   └── GetAllDTO.java
+│   ├── GetAllDTO.java
+│   └── JwtDTO.java
 │
 ├── Repository/                         # Spring Data JPA repositories
 │   ├── AuthorRepository.java
 │   ├── BookRepository.java
 │   ├── CategoryRepository.java
-│   └── ReviewRepository.java
+│   ├── ReviewRepository.java
+│   └── UserRepository.java
 │
 ├── Service/                            # Business logic layer
+│   ├── AuthService.java
 │   ├── AuthorService.java
 │   ├── BookService.java
 │   ├── CategoryService.java
 │   └── ReviewService.java
 │
 └── Utils/                              # Utility classes
+    ├── BcryptUtil.java                # Password hashing utility
     ├── CustomError.java               # Custom exception class
+    ├── JwtUtil.java                   # JWT token generation/validation
     └── ResponseHandler.java           # Standardized API response wrapper
 ```
 
@@ -77,6 +92,10 @@ src/main/java/com/example/BookPlatform/
 ### Entity Relationships
 
 ```
+User (Independent)
+  ↓
+  email, password, role (ADMIN/USER)
+
 Author (1) ──────< (N) Book (N) >────── (N) Category
                          |
                          |
@@ -87,6 +106,15 @@ Author (1) ──────< (N) Book (N) >────── (N) Category
 ```
 
 ### Entities
+
+#### **User**
+- **Table**: `users`
+- **Relationships**: None (independent)
+- **Fields**:
+  - `id` (Primary Key)
+  - `email` (Unique, not null)
+  - `password` (BCrypt hashed)
+  - `role` (Enum: ADMIN, USER)
 
 #### **Author**
 - **Table**: `authors`
@@ -124,44 +152,74 @@ Author (1) ──────< (N) Book (N) >────── (N) Category
 
 ## 📡 API Endpoints
 
+### 🔒 Authentication & Authorization
+
+**Authentication**: JWT tokens required for protected endpoints  
+**Authorization**: Admin role required for all create/update/delete operations
+
+#### How to Authenticate:
+1. **Signup**: `POST /api/auth/signup`
+2. **Login**: `POST /api/auth/login` (returns JWT token)
+3. **Use Token**: Include in `Authorization` header as `Bearer <token>`
+
+#### Protected Endpoints:
+- **Admin-only routes**: `/api/*/admin/*` (requires `ADMIN` role)
+- **User routes**: `/api/*/protected/*` (requires any authenticated user)
+
+---
+
+### **Authentication Endpoints** (`/api/auth`)
+
+| Method | Endpoint | Description | Request Body | Response |
+|--------|----------|-------------|--------------|----------|
+| POST | `/signup` | Register new user | `{ "email": "user@example.com", "password": "string" }` | Success message |
+| POST | `/login` | Login user | `{ "email": "user@example.com", "password": "string" }` | `{ "userId": number, "role": "USER/ADMIN", "token": "jwt_token" }` |
+
+**Notes**:
+- Default role: `USER`
+- Passwords are hashed using BCrypt
+- JWT tokens are required for protected/admin endpoints
+
+---
+
 ### **Author Endpoints** (`/api/author`)
 
-| Method | Endpoint | Description | Request Body | Query Params |
-|--------|----------|-------------|--------------|--------------|
-| GET | `/get-all-author` | Get all authors (paginated) | - | `page` (required, min: 1)<br>`size` (required, min: 1)<br>`name` (optional) |
-| GET | `/get-author/{authorId}` | Get author by ID | - | - |
-| POST | `/add-author` | Create new author | `{ "name": "string" }` | - |
-| PUT | `/update-author/{authorId}` | Update author | `{ "name": "string" }` | - |
-| DELETE | `/delete-author/{authorId}` | Delete author and related books | - | - |
+| Method | Endpoint | Description | Auth Required | Request Body | Query Params |
+|--------|----------|-------------|---------------|--------------|--------------|
+| GET | `/get-all-author` | Get all authors (paginated) | No | - | `page` (required, min: 1)<br>`size` (required, min: 1)<br>`name` (optional) |
+| GET | `/get-author/{authorId}` | Get author by ID | No | - | - |
+| POST | `/admin/add-author` | Create new author | **Admin** | `{ "name": "string" }` | - |
+| PUT | `/admin/update-author/{authorId}` | Update author | **Admin** | `{ "name": "string" }` | - |
+| DELETE | `/admin/delete-author/{authorId}` | Delete author and related books | **Admin** | - | - |
 
 ### **Book Endpoints** (`/api/book`)
 
-| Method | Endpoint | Description | Request Body | Query Params |
-|--------|----------|-------------|--------------|--------------|
-| GET | `/get-all-book` | Get all books (paginated) | - | `page` (required, min: 1)<br>`size` (required, min: 1)<br>`name` (optional) |
-| GET | `/get-book/{bookId}` | Get book by ID with avg rating | - | - |
-| POST | `/add-book` | Create new book | `{ "name": "string", "authorId": number, "categories": [number] }` | - |
-| PUT | `/update-book/{bookId}` | Update book details | `{ "name": "string" (optional), "authorId": number (optional), "categories": [number] (optional) }` | - |
-| DELETE | `/delete-book/{bookId}` | Delete book | - | - |
+| Method | Endpoint | Description | Auth Required | Request Body | Query Params |
+|--------|----------|-------------|---------------|--------------|--------------|
+| GET | `/get-all-book` | Get all books (paginated) | No | - | `page` (required, min: 1)<br>`size` (required, min: 1)<br>`name` (optional) |
+| GET | `/get-book/{bookId}` | Get book by ID with avg rating | No | - | - |
+| POST | `/admin/add-book` | Create new book | **Admin** | `{ "name": "string", "authorId": number, "categories": [number] }` | - |
+| PUT | `/admin/update-book/{bookId}` | Update book details | **Admin** | `{ "name": "string" (optional), "authorId": number (optional), "categories": [number] (optional) }` | - |
+| DELETE | `/admin/delete-book/{bookId}` | Delete book | **Admin** | - | - |
 
 ### **Category Endpoints** (`/api/category`)
 
-| Method | Endpoint | Description | Request Body | Query Params |
-|--------|----------|-------------|--------------|--------------|
-| GET | `/get-all-category` | Get all categories (paginated) | - | `page` (required, min: 1)<br>`size` (required, min: 1)<br>`name` (optional) |
-| GET | `/get-category/{categoryId}` | Get category by ID | - | - |
-| POST | `/add-category` | Create new category | `{ "name": "string" }` | - |
-| PUT | `/update-category/{categoryId}` | Update category | `{ "name": "string" }` | - |
-| DELETE | `/delete-category/{categoryId}` | Delete category | - | - |
+| Method | Endpoint | Description | Auth Required | Request Body | Query Params |
+|--------|----------|-------------|---------------|--------------|--------------|
+| GET | `/get-all-category` | Get all categories (paginated) | No | - | `page` (required, min: 1)<br>`size` (required, min: 1)<br>`name` (optional) |
+| GET | `/get-category/{categoryId}` | Get category by ID | No | - | - |
+| POST | `/admin/add-category` | Create new category | **Admin** | `{ "name": "string" }` | - |
+| PUT | `/admin/update-category/{categoryId}` | Update category | **Admin** | `{ "name": "string" }` | - |
+| DELETE | `/admin/delete-category/{categoryId}` | Delete category | **Admin** | - | - |
 
 ### **Review Endpoints** (`/api/review`)
 
-| Method | Endpoint | Description | Request Body | Query Params |
-|--------|----------|-------------|--------------|--------------|
-| GET | `/get-all-review/{bookId}` | Get all reviews for a book | - | `page` (required)<br>`size` (required) |
-| POST | `/add-review/{bookId}` | Add review to a book | `{ "message": "string", "stars": number (0-5) }` | - |
-| PUT | `/update-review/{reviewId}` | Update review | `{ "message": "string" (optional), "stars": number (optional, 0-5) }` | - |
-| DELETE | `/delete-review/{bookId}` | Delete review | - | - |
+| Method | Endpoint | Description | Auth Required | Request Body | Query Params |
+|--------|----------|-------------|---------------|--------------|--------------|
+| GET | `/get-all-review/{bookId}` | Get all reviews for a book | No | - | `page` (required)<br>`size` (required) |
+| POST | `/add-review/{bookId}` | Add review to a book | No | `{ "message": "string", "stars": number (0-5) }` | - |
+| PUT | `/update-review/{reviewId}` | Update review | No | `{ "message": "string" (optional), "stars": number (optional, 0-5) }` | - |
+| DELETE | `/delete-review/{bookId}` | Delete review | No | - | - |
 
 ### Response Format
 
@@ -208,9 +266,25 @@ Run the "Run Java" task which executes `~/coding/java_run.sh`
 
 The application runs on `http://localhost:8080`
 
-Example request:
+#### Public Endpoint Example:
 ```bash
 curl http://localhost:8080/api/book/get-all-book?page=1&size=10
+```
+
+#### Authentication Example:
+```bash
+# 1. Login to get JWT token
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"password"}'
+
+# Response: {"statusCode":200,"data":{"userId":1,"role":"ADMIN","token":"eyJhbGc..."},"message":"login successful"}
+
+# 2. Use token for admin endpoints
+curl -X POST http://localhost:8080/api/book/admin/add-book \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGc..." \
+  -d '{"name":"New Book","authorId":1,"categories":[1,2]}'
 ```
 
 ## 🏗 Architecture
@@ -232,12 +306,15 @@ Database (MySQL)
 ### Key Design Principles
 
 1. **Separation of Concerns**: Each layer has a distinct responsibility
-2. **Dependency Injection**: Constructor-based injection for loose coupling
-3. **DTO Pattern**: DTOs defined inline or separately for request/response mapping
-4. **Centralized Error Handling**: `GlobalErrorHandler` manages all exceptions
-5. **Validation**: Jakarta Validation annotations on DTOs and method parameters
-6. **Transactional Management**: `@Transactional` for data consistency
-7. **Standardized Responses**: `ResponseHandler` wraps all API responses
+2. **Security First**: JWT-based authentication with role-based authorization
+3. **Dependency Injection**: Constructor-based injection for loose coupling
+4. **DTO Pattern**: DTOs defined inline or separately for request/response mapping
+5. **Centralized Error Handling**: `GlobalErrorHandler` manages all exceptions
+6. **Validation**: Jakarta Validation annotations on DTOs and method parameters
+7. **Transactional Management**: `@Transactional` for data consistency
+8. **Standardized Responses**: `ResponseHandler` wraps all API responses
+9. **Password Security**: BCrypt hashing for all user passwords
+10. **CORS Configuration**: Pre-configured for local frontend development (ports 3000, 5173)
 
 ### Error Handling
 
@@ -255,11 +332,21 @@ Custom exceptions are handled globally:
 
 ## 📝 Notes
 
+### General
 - **Pagination**: All list endpoints use 1-based page numbers (internally converted to 0-based for Spring Data)
 - **Cascade Operations**: Deleting an author cascades to their books; deleting books cascades to reviews
 - **Lazy Loading**: Most relationships use `FetchType.LAZY` for performance
 - **Average Ratings**: Books automatically calculate average star ratings from reviews
 - **Search**: Name-based search available on authors, books, and categories
+
+### Security
+- **JWT Tokens**: Stateless authentication with no server-side session storage
+- **Token Format**: Include as `Authorization: Bearer <token>` header
+- **Password Hashing**: BCrypt with automatic salt generation
+- **Default Role**: New users assigned `USER` role (cannot perform admin operations)
+- **Admin Access**: Only users with `ADMIN` role can create/update/delete authors, books, and categories
+- **Public Access**: All GET endpoints (read operations) are publicly accessible
+- **CORS**: Configured for `localhost:3000` and `localhost:5173` (React/Vite development servers)
 
 ---
 
