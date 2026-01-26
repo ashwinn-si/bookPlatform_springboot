@@ -4,14 +4,26 @@ import com.example.BookPlatform.Domain.User;
 import com.example.BookPlatform.Repository.UserRepository;
 import com.example.BookPlatform.Utils.BcryptUtil;
 import com.example.BookPlatform.Utils.CustomError;
+import com.example.BookPlatform.Utils.JwtUtil;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
-public class UserService {
+@Service
+public class AuthService {
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    class LoginDTO{
+        private String jwtToken;
+    }
     private final UserRepository userRepository;
 
-    UserService(UserRepository userRepository){
+    AuthService(UserRepository userRepository){
         this.userRepository = userRepository;
     }
 
@@ -26,15 +38,14 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public void loginIn(String email, String password){
+    public LoginDTO loginIn(String email, String password){
         Optional<User> existingUser = userRepository.findByEmail(email);
-        //TODO email mail logic might be added
+        //TODO email mail logic might be added for login notification
         if(existingUser.isEmpty()){
             throw new CustomError(HttpStatus.NOT_FOUND, "user not found");
         }
         if(BcryptUtil.checkPassword(password, existingUser.get().getPassword())) {
-            //TODO jwt token generation
-            
+            return new LoginDTO(JwtUtil.generateJWTToken(existingUser.get().getId(), existingUser.get().getRole()));
         }else{
             throw new CustomError(HttpStatus.CONFLICT, "password incorrect");
         }

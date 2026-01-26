@@ -32,4 +32,6 @@ public class User {
         this.password = password;
         role = Roles.USER;
     }
+
+    //TODO email generation might be done
 }
