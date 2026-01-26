@@ -16,20 +16,23 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 class CategoryRequestDTO {
-  @NotBlank(message = "name is required")
-  @Size(min = 1, message = "name should be of at least size 1")
-  private String name;
+    @NotBlank(message = "name is required")
+    @Size(min = 1, message = "name should be of at least size 1")
+    private String name;
 }
 
 @RestController
 @RequestMapping("/api/category")
 @Validated
 public class CategoryController {
-  private final CategoryService categoryService;
+
+
+    private final CategoryService categoryService;
 
   CategoryController(CategoryService categoryService) {
     this.categoryService = categoryService;
@@ -50,13 +53,13 @@ public class CategoryController {
     return ResponseHandler.handleResponse(HttpStatus.OK, categoryService.getCategory(categoryId), "category details");
   }
 
-  @PostMapping("/add-category")
+  @PostMapping("/admin/add-category")
   public ResponseEntity<?> addCategory(@RequestBody @Valid CategoryRequestDTO categoryDTO) {
     categoryService.addCategory(categoryDTO.getName());
     return ResponseHandler.handleResponse(HttpStatus.CREATED, null, "category created");
   }
 
-  @PutMapping("/update-category/{categoryId}")
+  @PutMapping("/admin/update-category/{categoryId}")
   public ResponseEntity<?> updateCategory(
       @PathVariable @NotNull(message = "categoryId is required") @Min(0) Integer categoryId,
       @RequestBody @Valid CategoryRequestDTO categoryDTO) {
@@ -64,7 +67,7 @@ public class CategoryController {
     return ResponseHandler.handleResponse(HttpStatus.OK, null, "category details updated");
   }
 
-  @DeleteMapping("/delete-category/{categoryId}")
+  @DeleteMapping("/admin/delete-category/{categoryId}")
   public ResponseEntity<?> deleteCategory(
       @PathVariable @NotNull(message = "categoryId is required") @Min(0) Integer categoryId) {
     categoryService.deleteCategory(categoryId);

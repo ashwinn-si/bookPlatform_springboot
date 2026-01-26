@@ -13,18 +13,22 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+class LoginDTO{
+  private String jwtToken;
+}
+
 @Service
 public class AuthService {
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    class LoginDTO{
-        private String jwtToken;
-    }
-    private final UserRepository userRepository;
 
-    AuthService(UserRepository userRepository){
-        this.userRepository = userRepository;
+    private final UserRepository userRepository;
+    private final BcryptUtil bcryptUtil;
+
+    AuthService(UserRepository userRepository, BcryptUtil bcryptUtil){
+      this.bcryptUtil = bcryptUtil;
+      this.userRepository = userRepository;
     }
 
     public void signUp(String email, String password){
@@ -33,7 +37,7 @@ public class AuthService {
         if(existingUser.isPresent()){
             throw new CustomError(HttpStatus.CONFLICT, "already user with email exists");
         }
-        String hashPassword = BcryptUtil.generateHashPassword(password);
+        String hashPassword = bcryptUtil.generateHashPassword(password);
         User user = new User(email, hashPassword);
         userRepository.save(user);
     }
@@ -44,7 +48,7 @@ public class AuthService {
         if(existingUser.isEmpty()){
             throw new CustomError(HttpStatus.NOT_FOUND, "user not found");
         }
-        if(BcryptUtil.checkPassword(password, existingUser.get().getPassword())) {
+        if(bcryptUtil.checkPassword(password, existingUser.get().getPassword())) {
             return new LoginDTO(JwtUtil.generateJWTToken(existingUser.get().getId(), existingUser.get().getRole()));
         }else{
             throw new CustomError(HttpStatus.CONFLICT, "password incorrect");

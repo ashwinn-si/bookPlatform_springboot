@@ -35,6 +35,10 @@ public class Review {
   @JoinColumn(name = "book_id")
   private Book book;
 
+  @OneToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id")
+  private User user;
+
   public Review(String message, Integer stars) {
     this.message = message;
     this.stars = stars;

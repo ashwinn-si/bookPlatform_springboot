@@ -1,5 +1,6 @@
 package com.example.BookPlatform.Controller;
 
+import com.example.BookPlatform.DTO.JwtDTO;
 import com.example.BookPlatform.Service.ReviewService;
 import com.example.BookPlatform.Utils.ResponseHandler;
 import jakarta.annotation.Nullable;
@@ -15,6 +16,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,39 +24,40 @@ import org.springframework.web.bind.annotation.*;
 @AllArgsConstructor
 @NoArgsConstructor
 class AddReviewDTO {
-  @Size(min = 0, message = "message is review")
-  private String message;
-  @Min(value = 0, message = "stars cant be negative")
-  @Max(value = 5, message = "stars must be lesser than 5")
-  private Integer stars;
+    @Size(min = 0, message = "message is review")
+    private String message;
+    @Min(value = 0, message = "stars cant be negative")
+    @Max(value = 5, message = "stars must be lesser than 5")
+    private Integer stars;
 }
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 class UpdateReviewDTO {
-  @Nullable
-  private String message;
-  @Nullable
-  @Min(value = 0, message = "stars cant be negative")
-  @Max(value = 5, message = "stars must be between 0 and 5")
-  private Integer stars;
+    @Nullable
+    private String message;
+    @Nullable
+    @Min(value = 0, message = "stars cant be negative")
+    @Max(value = 5, message = "stars must be between 0 and 5")
+    private Integer stars;
 }
 
 @RestController
 @RequestMapping("/api/review")
 @Validated
 public class ReviewController {
+
   private final ReviewService reviewService;
 
   ReviewController(ReviewService reviewService) {
     this.reviewService = reviewService;
   }
 
-  @PostMapping("/add-review/{bookId}")
-  ResponseEntity<?> addReview(@PathVariable @NotNull(message = "book id is required") Integer bookId,
+  @PostMapping("/protected/add-review/{bookId}")
+  ResponseEntity<?> addReview(@AuthenticationPrincipal JwtDTO jwtDTO, @PathVariable @NotNull(message = "book id is required") Integer bookId,
       @RequestBody @Valid AddReviewDTO addReviewDTO) {
-    reviewService.addReview(addReviewDTO.getMessage(), addReviewDTO.getStars(), bookId);
+    reviewService.addReview(jwtDTO.getUserId(), addReviewDTO.getMessage(), addReviewDTO.getStars(), bookId);
     return ResponseHandler.handleResponse(HttpStatus.CREATED, null, "book review added");
   }
 
@@ -66,16 +69,16 @@ public class ReviewController {
         "all book reviews");
   }
 
-  @DeleteMapping("/delete-review/{bookId}")
-  ResponseEntity<?> deleteReview(@PathVariable @NotNull(message = "book id is required") Integer bookId) {
-    reviewService.deleteReview(bookId);
+  @DeleteMapping("/protected/delete-review/{reviewId}")
+  ResponseEntity<?> deleteReview(@AuthenticationPrincipal JwtDTO jwtDTO, @PathVariable @NotNull(message = "reviewId id is required") Integer reviewId) {
+    reviewService.deleteReview(jwtDTO.getUserId(), reviewId);
     return ResponseHandler.handleResponse(HttpStatus.CREATED, null, "book review updated");
   }
 
-  @PutMapping("/update-review/{reviewId}")
-  ResponseEntity<?> updateReview(@PathVariable @NotNull(message = "review id is required") Integer reviewId,
-      @RequestBody @Valid UpdateReviewDTO updateReviewDTO) {
-    reviewService.updateReview(updateReviewDTO.getMessage(), updateReviewDTO.getStars(), reviewId);
+  @PutMapping("/protected/update-review/{reviewId}")
+  ResponseEntity<?> updateReview(@AuthenticationPrincipal JwtDTO jwtDTO, @PathVariable @NotNull(message = "review id is required") Integer reviewId,
+                                 @RequestBody @Valid UpdateReviewDTO updateReviewDTO) {
+    reviewService.updateReview(jwtDTO.getUserId(), updateReviewDTO.getMessage(), updateReviewDTO.getStars(), reviewId);
     return ResponseHandler.handleResponse(HttpStatus.CREATED, null, "book review deleted");
   }
 }

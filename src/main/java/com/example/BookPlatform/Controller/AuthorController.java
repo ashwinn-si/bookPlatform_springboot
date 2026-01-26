@@ -19,9 +19,9 @@ import org.springframework.web.bind.annotation.*;
 @NoArgsConstructor
 @AllArgsConstructor
 class AuthorDTO {
-  @NotBlank(message = "name is required")
-  @Size(min = 1, message = "name should be of atleast size 1")
-  private String name;
+    @NotBlank(message = "name is required")
+    @Size(min = 1, message = "name should be of atleast size 1")
+    private String name;
 
 }
 
@@ -29,6 +29,7 @@ class AuthorDTO {
 @RequestMapping("/api/author")
 @Validated
 public class AuthorController {
+
   private final AuthorService authorService;
 
   AuthorController(AuthorService authorService) {
@@ -51,20 +52,20 @@ public class AuthorController {
     return ResponseHandler.handleResponse(HttpStatus.OK, authorService.getAuthor(authorId, page, size), "author details");
   }
 
-  @PostMapping("/add-author")
+  @PostMapping("/admin/add-author")
   ResponseEntity<?> addAuthor(@RequestBody @Valid AuthorDTO authorDTO) {
     authorService.addAuthor(authorDTO.getName());
     return ResponseHandler.handleResponse(HttpStatus.CREATED, null, "author created");
   }
 
-  @PutMapping("/update-author/{authorId}")
+  @PutMapping("/admin/update-author/{authorId}")
   ResponseEntity<?> updateAuthor(@PathVariable @Min(value = 0, message = "id is required") Integer authorId,
       @RequestBody @Valid AuthorDTO authorDTO) {
     authorService.updateAuthor(authorId, authorDTO.getName());
     return ResponseHandler.handleResponse(HttpStatus.OK, null, "author details updated");
   }
 
-  @DeleteMapping("/delete-author/{authorId}")
+  @DeleteMapping("/admin/delete-author/{authorId}")
   ResponseEntity<?> deleteAuthor(@PathVariable @Min(value = 0, message = "id is required") Integer authorId) {
     authorService.deleteAuthor(authorId);
     return ResponseHandler.handleResponse(HttpStatus.OK, null, "author and the related books deleted");

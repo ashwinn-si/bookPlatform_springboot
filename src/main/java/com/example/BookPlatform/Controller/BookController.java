@@ -63,20 +63,20 @@ public class BookController {
         return ResponseHandler.handleResponse(HttpStatus.OK, bookService.getBook(bookId), "book details");
     }
 
-    @PostMapping("/add-book")
+    @PostMapping("/admin/add-book")
     ResponseEntity<?> addBook(@RequestBody @Valid AddBookDTO addBookDTO){
         bookService.addBook(addBookDTO.getName(), addBookDTO.getAuthorId(), addBookDTO.getCategories());
         return ResponseHandler.handleResponse(HttpStatus.CREATED, null, "book added");
     }
 
-    @PutMapping("/update-book/{bookId}")
+    @PutMapping("/admin/update-book/{bookId}")
     ResponseEntity<?> updateBook(@PathVariable @NotNull(message = "bookId is required") @Min(0) Integer bookId,
                                  @RequestBody @Valid UpdateBookDTO updateBookDTO){
         bookService.updateBook(bookId, updateBookDTO.getAuthorId(), updateBookDTO.getName(), updateBookDTO.getCategories());
         return ResponseHandler.handleResponse(HttpStatus.OK, null, "updated book added");
     }
 
-    @DeleteMapping("/delete-book/{bookId}")
+    @DeleteMapping("/admin/delete-book/{bookId}")
     ResponseEntity<?> deleteBook(@PathVariable @NotNull(message = "bookId is required") @Min(0) Integer bookId){
         bookService.deleteBook(bookId);
         return ResponseHandler.handleResponse(HttpStatus.OK, null, "book deleted");
